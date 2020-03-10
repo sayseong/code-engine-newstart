@@ -12,34 +12,14 @@ bool time_check(u8 from, u8 to);
 bool is_of_type(u8 bank, u8 type);
 u8 get_trainer_opponent_A_class();
 bool is_poke_caught(u16 species);
-/*#pragma pack(push,1)
-struct double_grass_tile{
-    u16 tile_id;
-    u8 percent;
-};
-#pragma pack(pop)
 
-struct double_grass_tile double_grass_tiles[DOUBLE_WILD_TILES] = {
-    {0xD, 70}
-};*/
-
-#define DOUBLE_BATTLE_PERCENT 0
-
+#if DOUBLE_BATTLE_PERCENT > 0
 bool doubles_tile_check(void)
 {
     return cur_map_get_blockid_at(sav1->x_coords + 7, sav1->y_coords + 7) == 0xD
     && percent_chance(DOUBLE_BATTLE_PERCENT);
-    /*for (u32 i = 0; i < DOUBLE_WILD_TILES; i++)
-    {
-        if (double_grass_tiles[i].tile_id == tile)
-        {
-            if (percent_chance(double_grass_tiles[i].percent))
-                return 1;
-            return 0;
-        }
-    }
-    return 0;*/
 }
+#endif
 
 bool consider_creating_wild_poke_delegate(void* poke_data){
     u16 spieces;
