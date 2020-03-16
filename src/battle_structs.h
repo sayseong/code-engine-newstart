@@ -834,7 +834,7 @@ struct poke_basestats
 	u16 evs_spatk : 2;
 	u16 evs_spdef : 2;
 	u16 unused : 3;
-	u16 sp;//神兽标识
+	u16 sp : 1;//神兽标识
 	u16 item1;
 	u16 item2;
 	u8 gender_ratio;
