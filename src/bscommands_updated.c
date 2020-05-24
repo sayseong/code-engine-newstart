@@ -571,7 +571,7 @@ void status_to_effect();
 bool move_effect2_setter(void)
 {
 	u8* move_effect = &battle_communication_struct.move_effect;
-	if (!MOVE_WORKED)
+	if (hitmarker & HITMARKER_IMMOBILE_DUE_TO_STATUS)
 	{
 		*move_effect = 0;
 		return 0;
@@ -1526,7 +1526,7 @@ u8 check_if_cannot_attack(void)
 			case 2: //check if frozen
 				if (attacker_struct->status.flags.freeze)
 				{
-					if (percent_chance(20))
+					if ((percent_chance(20)) || find_move_in_table(current_move, user_thawing_moves))
 					{
 						effect = 2;
 						attacker_struct->status.flags.freeze = 0;
