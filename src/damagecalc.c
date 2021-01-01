@@ -5,13 +5,14 @@ u8 get_airborne_state(u8 bank, u8 mode, u8 check_levitate);
 u8 can_lose_item(u8 bank, u8 stickyholdcheck, u8 sticky_message);
 u8 is_item_a_plate(u16 item);
 u16 get_battle_item_extra_param(u32 bank);
-u8 ability_battle_effects(u8 switch_id, u8 bank, u8 ability_to_check, u8 special_cases_argument, u16 move);
+u8 ability_battle_effects(u8 switch_id, u8 bank, u16 ability_to_check, u8 special_cases_argument, u16 move);
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
 u8 has_ability_effect(u8 bank, u8 mold_breaker);
 s8 get_move_position(u8 bank, u16 move);
 u8 weather_abilities_effect();
 u8 is_of_type(u8 bank, u8 type);
-bool check_ability(u8 bank, u8 ability);
+bool check_ability(u8 bank, u16 ability);
+bool check_ability_with_mold(u8 bank, u16 ability);
 u8 is_bank_present(u8 bank);
 void move_to_buff1(u16 move);
 u8 get_bank_side(u8 bank);
@@ -417,9 +418,9 @@ u16 apply_statboost(u16 stat, u8 boost) {
 }
 
 u16 get_poke_weight(u8 bank) {
-    u16 poke_weight = get_height_or_weight(species_to_national_dex(battle_participants[bank].species), 1);
+    u16 poke_weight = get_height_or_weight(species_to_national_dex(battle_participants[bank].species), 1); //shupian
     if (has_ability_effect(bank, 1)) {
-        switch (battle_participants[bank].ability_id) {
+        switch (gBankAbilities[bank]) {
             case ABILITY_HEAVY_METAL:
                 poke_weight *= 2;
                 break;
@@ -470,7 +471,7 @@ u16 get_speed(u8 bank) {
     //take abilities into account
     if (has_ability_effect(bank, 0)) {
         u8 weather_effect = weather_abilities_effect();
-        switch (battle_participants[bank].ability_id) {
+        switch (gBankAbilities[bank]) {
             case ABILITY_CHLOROPHYLL:
                 if (weather_effect && SUN_WEATHER)
                     speed *= 2;
@@ -809,6 +810,12 @@ u16 get_base_power(u16 move, u8 atk_bank, u8 def_bank) {
 				&& (!battle_flags.double_battle || !new_battlestruct->bank_affecting[bank_attacker].move_worked_thisturn))
                 base_power *= 2;
             break;
+		case MOVE_BOLT_BEAK:  //Hibiki
+		case MOVE_FISHIOUS_REND:
+			if (get_bank_turn_order(atk_bank) < get_bank_turn_order(def_bank) || menu_choice_pbs[def_bank] == ACTION_SWITCH) {
+				base_power *= 2;
+			}
+			break;
     }
     if (move >= MOVE_Z_NORMAL_PHYS && move <= MOVE_Z_FAIRY_SPEC)
         base_power = z_moves_power[CURRENT_Z_MOVE];
@@ -824,8 +831,10 @@ bool find_move_in_table(u16 move, const u16 *table_ptr) {
 }
 
 bool does_move_make_contact(u16 move, u8 atk_bank) {
-    return (move_table[move].move_flags.flags.makes_contact && !check_ability(atk_bank, ABILITY_LONG_REACH) &&
-        get_item_effect(atk_bank, 1) != ITEM_EFFECT_PROTECTIVEPADS);
+    if (move_table[move].move_flags.flags.makes_contact && !check_ability(atk_bank, ABILITY_LONG_REACH) &&
+        get_item_effect(atk_bank, 1) != ITEM_EFFECT_PROTECTIVEPADS)
+        return 1;
+    return 0;
 }
 
 u16 apply_base_power_modifiers(u16 move, u8 move_type, u8 atk_bank, u8 def_bank, u16 base_power) {
@@ -833,7 +842,7 @@ u16 apply_base_power_modifiers(u16 move, u8 move_type, u8 atk_bank, u8 def_bank,
     u8 move_split = move_table[move].split & photon_geyser_special(move); //JeremyZ
     //u16 quality_atk_modifier = percent_to_modifier(get_item_quality(battle_participants[atk_bank].held_item));
     if (has_ability_effect(atk_bank, 0)) {
-        switch (battle_participants[atk_bank].ability_id) {
+        switch (gBankAbilities[atk_bank]) {
             case ABILITY_TECHNICIAN:
                 if (base_power <= 60) {
                     modifier = chain_modifier(modifier, 0x1800);
@@ -891,6 +900,11 @@ u16 apply_base_power_modifiers(u16 move, u8 move_type, u8 atk_bank, u8 def_bank,
                     modifier = chain_modifier(modifier, 0x14CD);
                 }
                 break;
+            case ABILITY_PUNK_ROCK:  //shupian
+                if (find_move_in_table(move, &sound_moves[0])) {
+                    modifier = chain_modifier(modifier, 0x14CD);
+                }
+                break;				
             case ABILITY_TOUGH_CLAWS:
                 if (move_table[move].move_flags.flags.makes_contact) {
                     modifier = chain_modifier(modifier, 0x14CD);
@@ -930,17 +944,24 @@ u16 apply_base_power_modifiers(u16 move, u8 move_type, u8 atk_bank, u8 def_bank,
     //check partner abilities
     u8 atk_partner = atk_bank ^2;
     if (is_bank_present(atk_partner) && has_ability_effect(atk_partner, 0)) {
-        switch (battle_participants[atk_partner].ability_id) {
+        switch (gBankAbilities[atk_partner]) {
+            case ABILITY_POWER_SPOT:  //shupian
+                    modifier = chain_modifier(modifier, 0x14CD);
+                break;
+            case ABILITY_STEELY_SPIRIT:  //shupian
+                if (move_type == TYPE_STEEL)			
+                    modifier = chain_modifier(modifier, 0x1800);
+                break;				
             case ABILITY_BATTERY:
                 if (move_split == MOVE_SPECIAL)
                     modifier = chain_modifier(modifier, 0x14CD);
-                break;
+                break;				
         }
     }
 
     //check target abilities
     if (has_ability_effect(def_bank, 1)) {
-        switch (battle_participants[def_bank].ability_id) {
+        switch (gBankAbilities[def_bank]) {
             case ABILITY_HEATPROOF:
             case ABILITY_WATER_BUBBLE:
                 if (move_type == TYPE_FIRE)
@@ -950,6 +971,14 @@ u16 apply_base_power_modifiers(u16 move, u8 move_type, u8 atk_bank, u8 def_bank,
                 if (move_type == TYPE_FIRE)
                     modifier = chain_modifier(modifier, 0x1400);
                 break;
+            case ABILITY_PUNK_ROCK: //shupian
+                if (find_move_in_table(move, sound_moves))
+                    modifier = chain_modifier(modifier, 0x800);
+                break;	
+            case ABILITY_ICE_SCALES:  //shupian
+                if (move_split == MOVE_SPECIAL)
+                    modifier = chain_modifier(modifier, 0x800);
+                break;					
             case ABILITY_FLUFFY:
                 if (does_move_make_contact(move, atk_bank))
                     modifier = chain_modifier(modifier, 0x800);
@@ -1186,7 +1215,7 @@ u16 get_attack_stat(u16 move, u8 move_type, u8 atk_bank, u8 def_bank) {
         attack_boost = battle_participants[stat_bank].sp_atk_buff;
     }
 
-    if (has_ability_effect(def_bank, 1) && battle_participants[def_bank].ability_id == ABILITY_UNAWARE) {
+    if (has_ability_effect(def_bank, 1) && gBankAbilities[def_bank] == ABILITY_UNAWARE) {
         attack_boost = 6;
     } else if (crit_loc == 2 && attack_boost < 6) {
         attack_boost = 6;
@@ -1204,13 +1233,18 @@ u16 get_attack_stat(u16 move, u8 move_type, u8 atk_bank, u8 def_bank) {
         else
             pinch_abilities = true;
 
-        switch (battle_participants[atk_bank].ability_id) {
+        switch (gBankAbilities[atk_bank]) {
             case ABILITY_PURE_POWER:
             case ABILITY_HUGE_POWER:
                 if (move_split == MOVE_PHYSICAL) {
                     modifier = chain_modifier(modifier, 0x2000);
                 }
                 break;
+			case ABILITY_GORILLA_TACTICS: //SHUPIAN
+            if (move_split == MOVE_PHYSICAL) {
+                modifier = chain_modifier(modifier, 0x1800);
+            }
+            break;				
             case ABILITY_SLOW_START:
                 if (new_battlestruct->bank_affecting[atk_bank].slowstart_duration) {
                     modifier = chain_modifier(modifier, 0x800);
@@ -1385,11 +1419,11 @@ u16 get_def_stat(u16 move, u8 atk_bank, u8 def_bank) {
         }
     }
 
-    if (check_ability(def_bank, ABILITY_MARVEL_SCALE) && battle_participants[def_bank].status.int_status && chosen_def == 0) {
+    if (check_ability_with_mold(def_bank, ABILITY_MARVEL_SCALE) && battle_participants[def_bank].status.int_status && chosen_def == 0) {
         modifier = chain_modifier(modifier, 0x1800);
-    } else if (check_ability(def_bank, ABILITY_FUR_COAT) && chosen_def == 0) {
+    } else if (check_ability_with_mold(def_bank, ABILITY_FUR_COAT) && chosen_def == 0) {
         modifier = chain_modifier(modifier, 0x2000);
-    } else if (check_ability(def_bank, ABILITY_GRASS_PELT) && new_battlestruct->field_affecting.grassy_terrain && chosen_def == 0) {
+    } else if (check_ability_with_mold(def_bank, ABILITY_GRASS_PELT) && new_battlestruct->field_affecting.grassy_terrain && chosen_def == 0) {
         modifier = chain_modifier(modifier, 0x1800);
     }
 
@@ -1503,10 +1537,15 @@ void damage_calc(u16 move, u8 move_type, u8 atk_bank, u8 def_bank, u16 chained_e
 
     //check aurora veil
     if (new_battlestruct->side_affecting[def_side].aurora_veil)
-        final_modifier = calc_reflect_modifier(atk_bank, def_bank, final_modifier);
+    {
+        if (move == MOVE_BRICK_BREAK || move == MOVE_PSYCHIC_FANGS)
+            new_battlestruct->side_affecting[def_side].aurora_veil = 0;
+        else
+            final_modifier = calc_reflect_modifier(atk_bank, def_bank, final_modifier);
+    }
 
-    u8 atk_ability = battle_participants[atk_bank].ability_id;
-    u8 def_ability = battle_participants[def_bank].ability_id;
+    u16 atk_ability = gBankAbilities[atk_bank];
+    u16 def_ability = gBankAbilities[def_bank];
     //halve damage if full HP
     if (FULL_HP(def_bank) && (def_ability == ABILITY_SHADOW_SHIELD || def_ability == ABILITY_MULTISCALE) &&
         has_ability_effect(def_bank, 1)) {
@@ -1523,7 +1562,7 @@ void damage_calc(u16 move, u8 move_type, u8 atk_bank, u8 def_bank, u16 chained_e
     if (atk_ability == ABILITY_SNIPER && crit_loc == 2 && has_ability_effect(atk_bank, 0)) {
         final_modifier = chain_modifier(final_modifier, 0x1800);
     }
-	if (def_ability == ABILITY_THICK_FAT && (move_type == TYPE_FIRE || move_type == TYPE_ICE)) {
+	if (check_ability_with_mold(def_bank, ABILITY_THICK_FAT) && (move_type == TYPE_FIRE || move_type == TYPE_ICE)) {
 		final_modifier = chain_modifier(final_modifier, 0x800);
 	}
     //reduces power of super effective moves

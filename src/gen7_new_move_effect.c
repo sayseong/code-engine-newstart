@@ -5,7 +5,7 @@ u16 apply_statboost(u16 stat, u8 boost);
 u8 get_bank_side(u8 bank);
 bool is_bank_present(u32 bank);
 u8 has_ability_effect(u8 bank, u8 mold_breaker);
-bool check_ability(u8 bank, u8 ability);
+bool check_ability(u8 bank, u16 ability);
 void atk0C_datahpupdate(void);
 u8 is_of_type(u8 bank, u8 type);
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
@@ -92,7 +92,7 @@ void atkFA_blowifnotdamp(void)
 {
 	for (u8 i = 0; i < 4; i++)
 	{
-		if (is_bank_present(i) && battle_participants[i].ability_id == ABILITY_DAMP && has_ability_effect(i, 1))
+		if (is_bank_present(i) && gBankAbilities[i] == ABILITY_DAMP && has_ability_effect(i, 1))
 		{
 			bank_target = i;
 			last_used_ability = ABILITY_DAMP;
@@ -180,10 +180,10 @@ void revert_mega_to_normalform_new(u8 opponent_side)
 		if (poke_address->current_hp && !battle_outcome)
 			continue;
 		u16 species_to_revert = 0;
-		u16 mega_current_species = get_attributes(poke_address,ATTR_SPECIES, 0);
+		u16 mega_current_species = poke_address->spieces;
 		const struct evolution_sub* evos = GET_EVO_TABLE(mega_current_species);
 		if (mega_current_species == POKE_ULTRA_NECROZMA)
-			species_to_revert = new_battlestruct->mega_related.light_up_species[opponent_side];
+			species_to_revert = ((u16*) sav1->balls_pocket)[opponent_side];
 		for (u8 j = 0; j < NUM_OF_EVOS; j++)
 		{
 			if (evos[j].method == 0xFF)
@@ -198,6 +198,7 @@ void revert_mega_to_normalform_new(u8 opponent_side)
 			calculate_stats_pokekmon(poke_address);
 		}
 	}
+	return;
 }
 
 //Start Z
@@ -237,7 +238,7 @@ u8 z_protect_affects(u16 move)
 void calc_recoil_dmg2(void)
 {
 	if ((check_ability(bank_attacker, ABILITY_ROCK_HEAD) || check_ability(bank_attacker, ABILITY_MAGIC_GUARD)) && current_move != MOVE_STRUGGLE) {
-		record_usage_of_ability(bank_attacker, battle_participants[bank_attacker].ability_id);
+		record_usage_of_ability(bank_attacker, gBankAbilities[bank_attacker]);
 		damage_loc = 0;
 		battle_communication_struct.multistring_chooser = 0;
 	}
@@ -275,7 +276,7 @@ bool clanging_scales_stat(void)
 
 
 bool check_ability_with_mold(u8 bank, u8 ability) {
-	return (has_ability_effect(bank, 1) && battle_participants[bank].ability_id == ability);
+	return (has_ability_effect(bank, 1) && gBankAbilities[bank] == ability);
 }
 
 void check_weather_trio(void) {
@@ -291,4 +292,35 @@ void check_weather_trio(void) {
 	if (battle_weather.flags.air_current && !check_field_for_ability(ABILITY_DELTA_STREAM, 3, 0)) {
 		battle_weather.flags.air_current = 0;
 	}
+}
+
+
+
+void clear_screen(void)//Clear screen, shupian
+{
+	u8 attackers_side = get_bank_side(bank_attacker);
+    u8 targets_side = get_bank_side(bank_target);
+    struct side_affecting_hword* target_side = &side_affecting_halfword[targets_side];
+    struct side_timer* target_timer = &side_timers[targets_side];
+	struct side_affecting_hword* attacker_side = &side_affecting_halfword[attackers_side];
+    struct side_timer* attacker_timer = &side_timers[attackers_side];
+    if (target_side->reflect_on || attacker_side->reflect_on )
+    {
+        target_side->reflect_on = 0;
+        target_timer->reflect_timer = 0;
+		attacker_side->reflect_on = 0;
+        attacker_timer->reflect_timer = 0;
+    }
+    else if (target_side->light_screen_on || attacker_side->light_screen_on )
+    {
+        target_side->light_screen_on = 0;
+        target_timer->lightscreen_timer = 0;
+		attacker_side->light_screen_on = 0;
+        attacker_timer->lightscreen_timer = 0;
+    }
+    else if (new_battlestruct->side_affecting[targets_side].aurora_veil || new_battlestruct->side_affecting[attackers_side].aurora_veil)
+    {
+        new_battlestruct->side_affecting[targets_side].aurora_veil = 0;
+        new_battlestruct->side_affecting[attackers_side].aurora_veil = 0;		
+    }
 }

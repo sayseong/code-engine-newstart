@@ -1,7 +1,9 @@
 #include "defines.h"
 #include "static_references.h"
 
-bool check_ability(u8 bank, u8 ability);
+bool has_ability_effect(u8 bank, u8 mold_breaker);
+bool check_ability(u8 bank, u16 ability);
+bool check_ability_with_mold(u8 bank, u16 ability);
 void set_attacking_move_type();
 u8 get_airborne_state(u8 bank, u8 mode, u8 check_levitate);
 u8 item_battle_effects(u8 switchid, u8 bank, u8 moveturn);
@@ -33,7 +35,7 @@ s8 get_move_position(u8 bank, u16 move);
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
 u8 weather_abilities_effect();
 u8* get_slide_msg(u16 trainerID, u8 caseID);
-u8 ability_battle_effects(u8 switch_id, u8 bank, u8 ability_to_check, u8 special_cases_argument, u16 move);
+u8 ability_battle_effects(u8 switch_id, u8 bank, u16 ability_to_check, u8 special_cases_argument, u16 move);
 u16 apply_statboost(u16 stat, u8 boost);
 u32 percent_boost(u32 number, u16 percent);
 bool move_effect_setter(bool primary, bool certain);
@@ -52,25 +54,25 @@ u32 random_value(u32 limit);
 u8 z_protect_affects(u16 move); //JeremyZ
 void check_weather_trio(void);
 
-bool no_inline is_poke_valid(struct pokemon* poke)
+bool is_poke_valid(struct pokemon* poke)
 {
     u16 species = get_attributes(poke, ATTR_SPECIES, 0);
     return (species != 0 && species != 412 && !get_attributes(poke, ATTR_IS_EGG, 0)); //JeremyZ
 }
 
-struct pokemon* no_inline get_party_ptr(u8 bank)
+struct pokemon* get_party_ptr(u8 bank)
 {
     if (get_bank_side(bank))
         return &party_opponent[0];
     return &party_player[0];
 }
 
-struct pokemon* no_inline get_bank_poke_ptr(u8 bank)
+struct pokemon* get_bank_poke_ptr(u8 bank)
 {
     return &get_party_ptr(bank)[battle_team_id_by_side[bank]];
 }
 
-u8 no_inline get_poke_ability_active_bank(){
+u16 get_poke_ability_active_bank(){
 	return get_poke_ability(get_bank_poke_ptr(active_bank));
 }
 
@@ -86,13 +88,13 @@ u8 count_party_pokemon(u8 bank)
     return usable_pokes;
 }
 
-void no_inline ability_switchin_effect(void)
+void ability_switchin_effect(void)
 {
     status3[new_battlestruct->various.active_bank].innerswitchinlock = 1;
     ability_battle_effects(24, new_battlestruct->various.active_bank, 0, 0, 0);
 }
 
-void no_inline change_attacker_item(void)
+void change_attacker_item(void)
 {
     active_bank = bank_attacker;
     bb2_setattributes_in_battle(0, 2, 0, 4, &battle_participants[bank_attacker].held_item);
@@ -472,7 +474,7 @@ void shadow_thief()
 			*atk_stat+=by_how_much;
 			if(*atk_stat>0xC)
 				*atk_stat=0xC;
-			//妤?娴ｅ秵妲搁崣妯哄閻ㄥ嫭鏆熼崐?閸氼偆顑侀崣?,娴ｅ骸娲撴担宥嗘Ц閸欐ê瀵查惃鍕潣閹?
+			//�?浣嶆槸鍙樺寲鐨勬暟鍊?鍚鍙?,浣庡洓浣嶆槸鍙樺寲鐨勫睘�?
 			if(by_how_much>3)
 				by_how_much=3;
 			//battle_scripting.stat_changer = (by_how_much<<4) | bit_to_stat(BIT_GET(i));
@@ -578,14 +580,16 @@ void checkifcanconfuse_or_changestats(void)
 
 void jumpifcantpoison(void)
 {
-    switch (cant_poison(bank_attacker, bank_target, 0))
+    u8 cp = cant_poison(bank_attacker, bank_target, 0);
+    if (cp == 4 && !has_ability_effect(bank_target, 1)) cp = 0;
+    switch (cp)
     {
     case 0: //gets poisoned
         //record corrosion ability if is of steel or poison type
         if (is_of_type(bank_target, TYPE_STEEL) || is_of_type(bank_target, TYPE_POISON))
             record_usage_of_ability(bank_attacker, ABILITY_CORROSION);
         break;
-    case 1: //already poisoned
+	case 1: //already poisoned
         battlescripts_curr_instruction = (void*) 0x82D8F52;
         break;
     case 2: //other major condition
@@ -595,19 +599,25 @@ void jumpifcantpoison(void)
         battlescripts_curr_instruction = (void*) 0x82D9F2E;
         break;
     case 4: //ability prevention
-        last_used_ability = battle_participants[bank_target].ability_id;
+        last_used_ability = gBankAbilities[bank_target];
         record_usage_of_ability(bank_target, last_used_ability);
         battlescripts_curr_instruction = (void*) 0x82D8F63;
         break;
     case 5: //safeguard
         battlescripts_curr_instruction = (void*) 0x82DAD01;
+    case 6: //pastel veil
+		last_used_ability = gBankAbilities[bank_target];
+        record_usage_of_ability(bank_target, last_used_ability);
+     	bs_push_current(BS_PASTELVEIL_PREVENTS	);   
         break;
     }
 }
 
 void jumpifcantparalyze(void)
 {
-    switch (cant_become_paralyzed(bank_target, 0))
+    u8 cp = cant_become_paralyzed(bank_target, 0);
+    if (cp == 4 && !has_ability_effect(bank_target, 1)) cp = 0;
+    switch (cp)
     {
     case 1: //already paralyzed
         battlescripts_curr_instruction = (void*) 0x82D9351;
@@ -619,7 +629,7 @@ void jumpifcantparalyze(void)
         battlescripts_curr_instruction = (void*) 0x82D9F2E;
         break;
     case 4: //ability prevention
-        last_used_ability = battle_participants[bank_target].ability_id;
+        last_used_ability = gBankAbilities[bank_target];
         record_usage_of_ability(bank_target, last_used_ability);
         battlescripts_curr_instruction = (void*) 0x82D9362;
         break;
@@ -628,7 +638,9 @@ void jumpifcantparalyze(void)
 
 void jumpifcantburn(void)
 {
-    switch (cant_become_burned(bank_target, 0))
+    u8 cp = cant_become_burned(bank_target, 0);
+    if (cp == 4 && !has_ability_effect(bank_target, 1)) cp = 0;
+    switch (cp)
     {
     case 1: //already burned
         battlescripts_curr_instruction = (void*) 0x82DA0BB;
@@ -713,27 +725,37 @@ void checkifcantransfercondition(void)
     struct battle_participant* attacker_struct = &battle_participants[bank_attacker];
     struct battle_participant* target_struct = &battle_participants[bank_target];
     u8 fail = 1;
-    if (attacker_struct->status.flags.burn && !cant_become_burned(bank_target, 0))
+    u8 cp_burned = cant_become_burned(bank_target, 0);
+    u8 cp_freezed = cant_become_freezed(bank_target, 0);
+    u8 cp_asleep = cant_fall_asleep(bank_target, 0);
+    u8 cp_paralyzed = cant_become_paralyzed(bank_target, 0);
+    u8 cp_poison = cant_poison(bank_attacker, bank_target, 0);
+    if (cp_burned == 4 && !has_ability_effect(bank_target, 1)) cp_burned = 0;
+    if (cp_freezed == 4 && !has_ability_effect(bank_target, 1)) cp_freezed = 0;
+    if (cp_asleep == 4 && !has_ability_effect(bank_target, 1)) cp_asleep = 0;
+    if (cp_paralyzed == 4 && !has_ability_effect(bank_target, 1)) cp_paralyzed = 0;
+    if (cp_poison == 4 && !has_ability_effect(bank_target, 1)) cp_poison = 0;
+    if (attacker_struct->status.flags.burn && !cp_burned)
     {
         target_struct->status.flags.burn = 1;
         fail = 0;
     }
-    else if (attacker_struct->status.flags.freeze && !cant_become_freezed(bank_target, 0))
+    else if (attacker_struct->status.flags.freeze && !cp_freezed)
     {
         target_struct->status.flags.freeze = 1;
         fail = 0;
     }
-    else if (attacker_struct->status.flags.sleep && !cant_fall_asleep(bank_target, 0))
+    else if (attacker_struct->status.flags.sleep && !cp_asleep)
     {
         target_struct->status.flags.sleep = attacker_struct->status.flags.sleep;
         fail = 0;
     }
-    else if (attacker_struct->status.flags.paralysis && !cant_become_paralyzed(bank_target, 0))
+    else if (attacker_struct->status.flags.paralysis && !cp_paralyzed)
     {
         target_struct->status.flags.paralysis = 1;
         fail = 0;
     }
-    else if ((attacker_struct->status.flags.poison || attacker_struct->status.flags.toxic_poison) && !cant_become_freezed(bank_target, 0))
+    else if ((attacker_struct->status.flags.poison || attacker_struct->status.flags.toxic_poison) && !cp_poison)
     {
         target_struct->status.flags.poison = attacker_struct->status.flags.poison;
         target_struct->status.flags.toxic_poison = attacker_struct->status.flags.toxic_poison;
@@ -968,13 +990,13 @@ void setthirdtype(void)
     }
 }
 
-const u8 forbidenabilitiestable1[] = {ABILITY_WONDER_GUARD, ABILITY_STANCE_CHANGE, ABILITY_ILLUSION, ABILITY_MULTITYPE, ABILITY_SCHOOLING, ABILITY_COMATOSE, ABILITY_SHIELDS_DOWN,ABILITY_DISGUISE, ABILITY_RKS_SYSTEM, ABILITY_BATTLE_BOND, ABILITY_POWER_CONSTRUCT, 0xFF};
-const u8 forbidenabilitiestable2[] = {ABILITY_MULTITYPE,  ABILITY_STANCE_CHANGE, ABILITY_DISGUISE, ABILITY_BATTLE_BOND, ABILITY_SHIELDS_DOWN, ABILITY_POWER_CONSTRUCT, ABILITY_SCHOOLING, ABILITY_COMATOSE, ABILITY_RKS_SYSTEM, 0xFF}; //
-const u8 forbidenabilitiestable3[] = {ABILITY_WONDER_GUARD, ABILITY_STANCE_CHANGE,  ABILITY_MULTITYPE, ABILITY_ILLUSION, ABILITY_FLOWER_GIFT, ABILITY_FORECAST, ABILITY_IMPOSTER, ABILITY_TRACE, ABILITY_COMATOSE,
+const u16 forbidenabilitiestable1[] = {ABILITY_WONDER_GUARD, ABILITY_STANCE_CHANGE, ABILITY_ILLUSION, ABILITY_MULTITYPE, ABILITY_SCHOOLING, ABILITY_COMATOSE, ABILITY_SHIELDS_DOWN,ABILITY_DISGUISE, ABILITY_RKS_SYSTEM, ABILITY_BATTLE_BOND, ABILITY_POWER_CONSTRUCT, 0xFF};
+const u16 forbidenabilitiestable2[] = {ABILITY_MULTITYPE,  ABILITY_STANCE_CHANGE, ABILITY_DISGUISE, ABILITY_BATTLE_BOND, ABILITY_SHIELDS_DOWN, ABILITY_POWER_CONSTRUCT, ABILITY_SCHOOLING, ABILITY_COMATOSE, ABILITY_RKS_SYSTEM, 0xFF}; //
+const u16 forbidenabilitiestable3[] = {ABILITY_WONDER_GUARD, ABILITY_STANCE_CHANGE,  ABILITY_MULTITYPE, ABILITY_ILLUSION, ABILITY_FLOWER_GIFT, ABILITY_FORECAST, ABILITY_IMPOSTER, ABILITY_TRACE, ABILITY_COMATOSE,
                                     ABILITY_ZEN_MODE, ABILITY_POWER_OF_ALCHEMY, ABILITY_RECEIVER, ABILITY_DISGUISE, ABILITY_SCHOOLING, ABILITY_SHIELDS_DOWN, ABILITY_BATTLE_BOND, ABILITY_RKS_SYSTEM, ABILITY_POWER_CONSTRUCT, 0xFF};
-const u8 forbidenabilitiestable4[] = {ABILITY_MULTITYPE, ABILITY_TRUANT, ABILITY_STANCE_CHANGE, ABILITY_SCHOOLING, ABILITY_COMATOSE, ABILITY_SHIELDS_DOWN, ABILITY_DISGUISE, ABILITY_BATTLE_BOND, ABILITY_RKS_SYSTEM, ABILITY_POWER_CONSTRUCT, 0xFF};
+const u16 forbidenabilitiestable4[] = {ABILITY_MULTITYPE, ABILITY_TRUANT, ABILITY_STANCE_CHANGE, ABILITY_SCHOOLING, ABILITY_COMATOSE, ABILITY_SHIELDS_DOWN, ABILITY_DISGUISE, ABILITY_BATTLE_BOND, ABILITY_RKS_SYSTEM, ABILITY_POWER_CONSTRUCT, 0xFF};
 
-bool findability_in_table(u8 ability, const u8* table)
+bool findability_in_table(u16 ability, const u16* table)
 {
     for (u32 i = 0; table[i] != 0xFF; i++)
     {
@@ -987,8 +1009,8 @@ bool findability_in_table(u8 ability, const u8* table)
 void ability_change(void)
 { //table goes Swapping/attackers change/targets change
     u8 fail = 0;
-    u8* ability_atk = &battle_participants[bank_attacker].ability_id;
-    u8* ability_def = &battle_participants[bank_target].ability_id;
+    u16* ability_atk = &gBankAbilities[bank_attacker];
+    u16* ability_def = &gBankAbilities[bank_target];
     switch (move_table[current_move].arg1)
     {
         case 0: //swapping abilities
@@ -996,7 +1018,7 @@ void ability_change(void)
                 fail = 1;
             else
             {
-                u8 placeholder = *ability_atk;
+                u16 placeholder = *ability_atk;
                 *ability_atk = *ability_def;
                 *ability_def = placeholder;
                 battle_communication_struct.multistring_chooser = 0;
@@ -1045,8 +1067,8 @@ void ability_change(void)
     else
     {
         battlescripts_curr_instruction += 4;
-        abilities_by_banks[bank_attacker] = *ability_atk;
-        abilities_by_banks[bank_target] = *ability_def;
+        gBankAbilities[bank_attacker] = *ability_atk;
+        gBankAbilities[bank_target] = *ability_def;
 		check_weather_trio(); //Weather Trio
     }
 }
@@ -1183,7 +1205,7 @@ void countercalc(void)
 
 void gastroacid(void)
 {
-    u16 targets_ability = battle_participants[bank_target].ability_id;
+    u16 targets_ability = gBankAbilities[bank_target];
     if (findability_in_table(targets_ability, forbidenabilitiestable2))
         battlescripts_curr_instruction = (void*) read_word(battlescripts_curr_instruction);
     else
@@ -1216,7 +1238,7 @@ void naturalgift(void)
 {
     u16 item = battle_participants[bank_attacker].held_item;
     u8 effect = 1;
-    if (battle_participants[bank_attacker].ability_id == ABILITY_KLUTZ || new_battlestruct->bank_affecting[bank_attacker].embargo || new_battlestruct->field_affecting.magic_room)
+    if (gBankAbilities[bank_attacker] == ABILITY_KLUTZ || new_battlestruct->bank_affecting[bank_attacker].embargo || new_battlestruct->field_affecting.magic_room)
         effect = 0;
     if (!effect || !item || get_item_pocket_id(item) != 4)
         battlescripts_curr_instruction = (void*) read_word(battlescripts_curr_instruction);
@@ -1557,6 +1579,14 @@ void defog_effect(void)
         ptr_to_script = &defogblows_bs;
         move_to_buff1(MOVE_LIGHT_SCREEN);
     }
+    else if (new_battlestruct->side_affecting[targets_side].aurora_veil)
+    {
+        effect = 1;
+        new_battlestruct->side_affecting[targets_side].aurora_veil = 0;
+        bank_attacker = bank_target;
+        ptr_to_script = &defogblows_bs;
+        move_to_buff1(MOVE_AURORA_VEIL);
+    }
     else if (target_side->mist_on)
     {
         effect = 1;
@@ -1803,6 +1833,7 @@ void twoturn_moves(void)
         *stringchooser = 2;
         break;
     case MOVE_SOLAR_BEAM:
+	case MOVE_SOLAR_BLADE:
         *stringchooser = 3;
         break;
     case MOVE_BOUNCE:
@@ -2070,9 +2101,9 @@ void allyswitch_dataswitch(void)
     battle_resources->battle_history->used_moves[ally_bank] = attacker7;
 
     //abilities in RAM
-    u8 attackerability = abilities_by_banks[bank_attacker];
-    abilities_by_banks[bank_attacker] = abilities_by_banks[ally_bank];
-    abilities_by_banks[ally_bank] = attackerability;
+    u16 attackerability = gBankAbilities[bank_attacker];
+    gBankAbilities[bank_attacker] = gBankAbilities[ally_bank];
+    gBankAbilities[ally_bank] = attackerability;
 
     //in-party position
     u16* partyAttacker = &battle_team_id_by_side[bank_attacker];
@@ -2376,7 +2407,7 @@ void party_heal(void)
         mark_buffer_bank_for_execution(active_bank);
         instuction = &PARTYHEAL_USER;
     }
-    else if (is_bank_present(ally) && battle_participants[ally].status.int_status && !check_ability(ally, ability_to_ignore))
+    else if (is_bank_present(ally) && battle_participants[ally].status.int_status && !check_ability_with_mold(ally, ability_to_ignore))
     {
         effect = 1;
         pos = battle_team_id_by_side[ally];
@@ -2393,7 +2424,7 @@ void party_heal(void)
         for (u8 i = 0; i < 6; i++)
         {
             condition = get_attributes(&poke[i], ATTR_STATUS_AILMENT, 0);
-            u8 ability = get_poke_ability(&poke[i]);
+            u16 ability = get_poke_ability(&poke[i]);
             if (is_poke_valid(&poke[i]) && condition && ability_to_ignore != ability)
             {
                 effect = 1;
@@ -2819,7 +2850,9 @@ void dont_play_move_anim(void)
 
 void jump_if_can_poison(void)
 {
-    if (!cant_poison(bank_attacker, bank_target, 0))
+    u8 cp = cant_poison(bank_attacker, bank_target, 0);
+    if (cp == 4 && !has_ability_effect(bank_target, 1)) cp = 0;
+    if (!cp)
         battlescripts_curr_instruction = (void*) read_word(battlescripts_curr_instruction);
     else
         battlescripts_curr_instruction += 4;
@@ -2893,9 +2926,9 @@ void check_soulheart(void)
             bs_push(battlescripts_curr_instruction - 3, BS_ATK_ABILITY_CHANGES_ATK_STAT);
             return;
         }
-        static const u8 cant_receive_abilities[] = {ABILITY_FLOWER_GIFT, ABILITY_FORECAST, ABILITY_ILLUSION, ABILITY_IMPOSTER, ABILITY_MULTITYPE, ABILITY_STANCE_CHANGE, ABILITY_TRACE, ABILITY_WONDER_GUARD, ABILITY_ZEN_MODE};
-        if ((check_ability(i, ABILITY_POWER_OF_ALCHEMY) || check_ability(i, ABILITY_RECEIVER)) && !battle_participants[i ^ 2].current_hp
-                 && !findability_in_table(battle_participants[i ^ 2].ability_id ,cant_receive_abilities) && is_bank_present(i) && !(*done & BIT_GET(i)))
+        static const u16 cant_receive_abilities[] = {ABILITY_FLOWER_GIFT, ABILITY_FORECAST, ABILITY_ILLUSION, ABILITY_IMPOSTER, ABILITY_MULTITYPE, ABILITY_STANCE_CHANGE, ABILITY_TRACE, ABILITY_WONDER_GUARD, ABILITY_ZEN_MODE};
+        if (battle_flags.double_battle && (check_ability(i, ABILITY_POWER_OF_ALCHEMY) || check_ability(i, ABILITY_RECEIVER)) && !battle_participants[i ^ 2].current_hp
+                 && !findability_in_table(gBankAbilities[i ^ 2] ,cant_receive_abilities) && is_bank_present(i) && !(*done & BIT_GET(i)))
         {
 
             *done |= BIT_GET(i);
@@ -2910,9 +2943,9 @@ void check_soulheart(void)
 
 void receiver_effect(void)
 {
-    u8 new_ability = battle_participants[bank_attacker ^ 2].ability_id;
-    battle_participants[bank_attacker].ability_id = new_ability;
-    abilities_by_banks[bank_attacker] = new_ability;
+    u16 new_ability = gBankAbilities[bank_attacker ^ 2];
+    gBankAbilities[bank_attacker] = new_ability;
+    gBankAbilities[bank_attacker] = new_ability;
     record_usage_of_ability(bank_attacker, new_ability);
     last_used_ability = new_ability;
 }
@@ -3099,6 +3132,8 @@ void print_start_z(void); //Start Z, JeremyZ
 void jumpifnostockpile(void); //Spit Up, JeremyZ
 void calc_recoil_dmg2(void); //Recoil damage, JeremyZ
 void clanging_scales_stat(void); //Clanging Scales, Clangorous Soulblaze, JeremyZ
+void clear_screen(void); //Clear screen, shupian
+void trapattacker(void); //Make the attacker in a state of no escape //jifeng
 
 const command callasm_table[] = {&ability_switchin_effect /*0*/, &jump_if_forcesetflag_set /*1*/, &change_attacker_item /*2*/, &callasm_nop /*3*/, &callasm_nop /*4*/,
 &changestatvar1_atk /*5*/, &changestatvar2_atk /*6*/, &frisk_target_item /*7*/, &callasm_nop /*8*/, &set_type_msg_buffer /*9*/, &callasm_nop /*10*/, &bad_dreams_damage_calc /*11*/,
@@ -3133,11 +3168,16 @@ const command callasm_table[] = {&ability_switchin_effect /*0*/, &jump_if_forces
 &set_stats_to_play /*156*/, &receiver_effect /*157*/, &bugbite_get_berry_effect /*158*/, &prepare_switchbank_data /*159*/, &ash_greninja_check /*160*/,
 &zygarde_message_based_on_side/*161*/, &hp_stat_form_change /*162*/, &revert_mega /*163*/, &instruct_canceler /*164*/, &set_instruct /*165*/,
 &apply_zmove_changes/*166*/, &set_spotlight/*167*/, &set_throatchop/*168*/, &speed_swap/*169*/, &jumpifuserheadblown/*170*/,
-&print_start_z/*171*/, &jumpifnostockpile/*172*/, &calc_recoil_dmg2/*173*/, &clanging_scales_stat/*174*/};
+&print_start_z/*171*/, &jumpifnostockpile/*172*/, &calc_recoil_dmg2/*173*/, &clanging_scales_stat/*174*/, &clear_screen/*175*/ ,&trapattacker/*176*/};
 
 void atk83_callasm(void)
 {
     u16 command_id = read_hword(battlescripts_curr_instruction + 1);
     battlescripts_curr_instruction += 3;
     callasm_table[command_id]();
+}
+void trapattacker(void)
+{
+	battle_participants[bank_attacker].status2.cant_escape = 1;
+    disable_structs[bank_target].bank_preventing_escape = bank_attacker;
 }

@@ -4,7 +4,7 @@
 u16 get_transform_species(u8 bank);
 u16 get_airborne_state(u8 bank, u8 mode, u8 check_levitate);
 bool is_of_type(u8 bank, u8 type);
-u8 check_ability(u8 bank, u8 ability);
+bool check_ability(u8 bank, u16 ability);
 bool is_bank_present(u32 bank);
 u8 learnsanydamagingmove(u16 poke);
 u16 type_effectiveness_calc(u16 move, u8 move_type, u8 atk_bank, u8 def_bank, u8 effects_handling_and_recording);
@@ -17,7 +17,7 @@ u8 find_move_in_table(u16 move, const u16* table_ptr);
 u8 get_first_to_strike(u8 bank1, u8 bank2, u8 ignore_priority);
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
 u8 has_ability_effect(u8 bank, u8 mold_breaker);
-u8 ability_battle_effects(u8 switch_id, u8 bank, u8 ability_to_check, u8 special_cases_argument, u16 move);
+u8 ability_battle_effects(u8 switch_id, u8 bank, u16 ability_to_check, u8 special_cases_argument, u16 move);
 void canuselastresort();
 void belch_canceler();
 void can_magneticflux_work();
@@ -101,21 +101,23 @@ bool is_ability_preventing_switching(u8 preventing_bank, u8 prevented_bank)
     return 0;
 }
 
+u16 get_ability_by_species(u16 species, u8 slot);
+
 u8 ai_get_ability(u8 bank, u8 gastro)
 {
-    u8 ability;
+    u16 ability;
     if (is_bank_ai(bank))
-        ability = battle_participants[bank].ability_id;
+        ability = gBankAbilities[bank];
     else
     {
-        u8 recorded_ability = battle_resources->battle_history->ability[bank];
+        u16 recorded_ability = gBankAbilities[bank];
         u16 species = ai_get_species(bank);
         if (recorded_ability)
             ability = recorded_ability;
-        else if (!has_poke_hidden_ability(species) && !(*basestat_table)[species].ability2) //poke has only one ability
-            ability = (*basestat_table)[species].ability1;
+        else if (!has_poke_hidden_ability(species) && !get_ability_by_species(species, 1)) //poke has only one ability
+            ability = get_ability_by_species(species, 0);
         else if (is_ability_preventing_switching(bank, bank ^ 1) || is_ability_preventing_switching(bank, bank ^ 1 ^ 2)) //check if bank prevents escape
-            ability = battle_participants[bank].ability_id;
+            ability = gBankAbilities[bank];
         else
             ability = 0;
     }
@@ -156,7 +158,7 @@ void save_bank_stuff(u8 bank)
     new_battlestruct->trainer_AI.saved_item[bank] = *item;
     if (!get_item_effect(bank, 0)) //ai doesn't know an item the target has
         *item = 0;
-    u8* ability = &battle_participants[bank].ability_id;
+    u16* ability = &gBankAbilities[bank];
     new_battlestruct->trainer_AI.saved_ability[bank] = *ability;
     if (!ai_get_ability(bank, 0)) //ai doesn't know an ability the target has
         *ability = 0;
@@ -168,7 +170,7 @@ void save_bank_stuff(u8 bank)
 void restore_bank_stuff(u8 bank)
 {
     battle_participants[bank].held_item = new_battlestruct->trainer_AI.saved_item[bank];
-    battle_participants[bank].ability_id = new_battlestruct->trainer_AI.saved_ability[bank];
+    gBankAbilities[bank] = new_battlestruct->trainer_AI.saved_ability[bank];
     battle_participants[bank].species = new_battlestruct->trainer_AI.saved_species[bank];
 }
 
@@ -224,7 +226,7 @@ u32 ai_calculate_damage(u8 atk_bank, u8 def_bank, u16 move)
             no_of_hits = 2 + random_value(5)/*__umodsi3(rng(), 3) + __umodsi3(rng(), 2)*/; //2 + 0/1/2 + 0/1 = 2/3/4/5
     }
     u32 damage = damage_loc * no_of_hits;
-    if (no_of_hits == 1 && has_ability_effect(def_bank, 1) && battle_participants[def_bank].ability_id == ABILITY_STURDY && battle_participants[def_bank].current_hp == battle_participants[def_bank].max_hp)
+    if (no_of_hits == 1 && has_ability_effect(def_bank, 1) && gBankAbilities[def_bank] == ABILITY_STURDY && battle_participants[def_bank].current_hp == battle_participants[def_bank].max_hp)
         damage = battle_participants[def_bank].max_hp - 1;
     if (affected_by_substitute(def_bank))
     {
@@ -367,14 +369,15 @@ void tai5F_is_of_type() //u8 bank, u8 type
     tai_current_instruction += 3;
 }
 
-void tai60_checkability() //u8 bank, u8 ability, u8 gastro
+//修改以实现支持读取0xFFFF个特性
+void tai60_checkability() //u8 bank, u16 ability, u8 gastro
 {
     u32* var = &AI_STATE->var;
-    if (ai_get_ability(get_ai_bank(read_byte(tai_current_instruction + 1)), read_byte(tai_current_instruction + 3)) == read_byte(tai_current_instruction + 2))
+    if (ai_get_ability(get_ai_bank(read_byte(tai_current_instruction + 1)), read_byte(tai_current_instruction + 4)) == read_hword(tai_current_instruction + 2))
         *var = 1;
     else
         *var = 0;
-    tai_current_instruction += 4;
+    tai_current_instruction += 5;
 }
 
 u8 is_stat_change_positive(u16 move)

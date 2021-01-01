@@ -8,12 +8,12 @@ s8 get_priority(u16 move, u8 bank);
 u16 type_effectiveness_calc(u16 move, u8 move_type, u8 atk_bank, u8 def_bank, u8 effects_handling_and_recording);
 u8 get_attacking_move_type();
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
-u8 ability_battle_effects(u8 switch_id, u8 bank, u8 ability_to_check, u8 special_cases_argument, u16 move);
+u8 ability_battle_effects(u8 switch_id, u8 bank, u16 ability_to_check, u8 special_cases_argument, u16 move);
 u8 has_ability_effect(u8 bank, u8 mold_breaker);
 u8 weather_abilities_effect();
 bool does_move_make_contact(u16 move, u8 atk_bank);
 u8 find_move_in_table(u16 move, const u16* table_ptr);
-u8 check_ability(u8 bank, u8 ability);
+bool check_ability(u8 bank, u16 ability);
 u8 get_bank_side(u8 bank);
 u32 random_value(u32 limit);
 u8 check_field_for_ability(enum poke_abilities ability, u8 side_to_ignore, u8 mold);
@@ -28,34 +28,40 @@ u8 protect_affects(u16 move, u8 set)
     u8 contact = does_move_make_contact(move, bank_attacker);
     u8 target = move_table[move].target;
     u8 targets_side = get_bank_side(bank_target);
-    if (protect_structs[bank_target].flag0_protect)
-        effect = 1;
-    else if (new_battlestruct->bank_affecting[bank_target].kings_shield && split != 2)
-    {
-        effect = 1;
-        if (contact && set)
-            new_battlestruct->bank_affecting[bank_attacker].kingsshield_damage = 1;
-    }
-    else if (new_battlestruct->bank_affecting[bank_target].spiky_shield)
-    {
-        effect = 1;
-        if (contact && set)
-            new_battlestruct->bank_affecting[bank_attacker].spikyshield_damage = 1;
-    }
-    else if (new_battlestruct->bank_affecting[bank_target].baneful_bunker)
-    {
-        effect = 1;
-        if (contact && set)
-            new_battlestruct->bank_affecting[bank_attacker].banefulbunker_damage = 1;
-    }
-    else if (new_battlestruct->side_affecting[targets_side].crafty_shield && split == 2)
-        effect = 1;
-    else if (new_battlestruct->side_affecting[targets_side].quick_guard && get_priority(current_move, bank_attacker) > 0)
-        effect = 1;
-    else if (new_battlestruct->side_affecting[targets_side].mat_block && split != 2)
-        effect = 1;
-    else if (new_battlestruct->side_affecting[targets_side].wide_guard && (target == move_target_both || target == move_target_foes_and_ally))
-        effect = 1;
+		
+		
+		if (protect_structs[bank_target].flag0_protect && check_ability(bank_attacker, ABILITY_UNSEEN_FIST) && contact && set)
+			effect = 0;
+		else {
+			if (protect_structs[bank_target].flag0_protect)
+				effect = 1;		
+			else if (new_battlestruct->bank_affecting[bank_target].kings_shield && split != 2)
+			{
+				effect = 1;
+				if (contact && set)
+					new_battlestruct->bank_affecting[bank_attacker].kingsshield_damage = 1;
+			}
+			else if (new_battlestruct->bank_affecting[bank_target].spiky_shield)
+			{
+				effect = 1;
+				if (contact && set)
+					new_battlestruct->bank_affecting[bank_attacker].spikyshield_damage = 1;
+			}
+			else if (new_battlestruct->bank_affecting[bank_target].baneful_bunker)
+			{
+				effect = 1;
+				if (contact && set)
+					new_battlestruct->bank_affecting[bank_attacker].banefulbunker_damage = 1;
+			}
+			else if (new_battlestruct->side_affecting[targets_side].crafty_shield && split == 2)
+				effect = 1;
+			else if (new_battlestruct->side_affecting[targets_side].quick_guard && get_priority(current_move, bank_attacker) > 0)
+				effect = 1;
+			else if (new_battlestruct->side_affecting[targets_side].mat_block && split != 2)
+				effect = 1;
+			else if (new_battlestruct->side_affecting[targets_side].wide_guard && (target == move_target_both || target == move_target_foes_and_ally))
+				effect = 1;
+		}
     return effect;
 }
 
@@ -115,15 +121,15 @@ u32 accuracy_percent(u16 move, u8 bankatk, u8 bankdef)
 	if (find_move_in_table(move, ignore_targetstats_moves) || check_ability(bankatk, ABILITY_UNAWARE))
 		evs_buff = 6;
 	else if (evs_buff > 6 && (battle_participants[bankdef].status2.foresight || new_battlestruct->bank_affecting[bankdef].miracle_eyed
-							  || (battle_participants[bankatk].ability_id == ABILITY_KEEN_EYE && has_ability_effect(bankatk, 0))))
+							  || (gBankAbilities[bankatk] == ABILITY_KEEN_EYE && has_ability_effect(bankatk, 0))))
 		evs_buff = 6;
 
 	u8 accuracy_buff = battle_participants[bankatk].acc_buff;
-	if (battle_participants[bankdef].ability_id == ABILITY_UNAWARE && has_ability_effect(bankdef, 1))
+	if (gBankAbilities[bankdef] == ABILITY_UNAWARE && has_ability_effect(bankdef, 1))
 		accuracy_buff = 6;
 
 	u8 move_accuracy = move_table[move].accuracy;
-	if (has_ability_effect(bankdef, 1) && battle_participants[bankdef].ability_id == ABILITY_WONDER_SKIN && !DAMAGING_MOVE(move) && move_accuracy > 0)
+	if (has_ability_effect(bankdef, 1) && gBankAbilities[bankdef] == ABILITY_WONDER_SKIN && !DAMAGING_MOVE(move) && move_accuracy > 0)
 		move_accuracy = 50;
 	else if ((move == MOVE_THUNDER || move == MOVE_HURRICANE) && weather_abilities_effect() && SUN_WEATHER)
 		move_accuracy = 50;
@@ -137,7 +143,7 @@ u32 accuracy_percent(u16 move, u8 bankatk, u8 bankdef)
 	accuracy = move_accuracy * fraction_stat_buffs2[buff].numerator / fraction_stat_buffs2[buff].denumenator;
 	if (has_ability_effect(bankatk, 0))
 	{
-		switch (battle_participants[bankatk].ability_id)
+		switch (gBankAbilities[bankatk])
 		{
 		case ABILITY_COMPOUND_EYES:
 			accuracy = percent_boost(accuracy, 30);
@@ -156,7 +162,7 @@ u32 accuracy_percent(u16 move, u8 bankatk, u8 bankdef)
 	}
 	if (has_ability_effect(bankdef, 1))
 	{
-		switch (battle_participants[bankdef].ability_id)
+		switch (gBankAbilities[bankdef])
 		{
 		case ABILITY_SAND_VEIL:
 			if (weather_abilities_effect() && SANDSTORM_WEATHER)
