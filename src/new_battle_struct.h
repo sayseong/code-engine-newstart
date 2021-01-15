@@ -167,8 +167,8 @@ struct various{
 
 struct mega_related
 {
-    u32 user_trigger: 2; // 0x0 for not set, 0x1 for z, 0x2 for ultra burst, 0x3 for mega (stone & wish)
-    u32 ally_trigger: 2;
+    u32 user_trigger: 3; // 0x0 for not set, 0x1 for z, 0x2 for ultra burst, 0x3 for mega (stone & wish), 0x4 for DYNAMAX
+    u32 ally_trigger: 3;
     u32 evo_happened_pbs: 4;
     u32 party_mega_check: 6;
     u32 ai_party_mega_check: 6;
@@ -178,6 +178,9 @@ struct mega_related
     u16 z_happened_pbs: 4;
     u16 party_z_check: 6;
     u16 ai_party_z_check: 6;
+	u16 MAX_happened_pbs: 4;
+	u16 party_MAX_check: 6;
+	u16 ai_party_MAX_check: 6;
     u16 light_up_species[2];
 };
 

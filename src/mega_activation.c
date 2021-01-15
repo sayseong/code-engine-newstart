@@ -144,6 +144,14 @@ u16 get_mega_species(u8 bank, u8 chosen_method)
 	return target_species;
 }
 
+u8 can_set_MAX_trigger(u8 bank)//sayseong
+{
+	if (bank == 0 && checkitem(799,1))
+		return flase;
+	else if (bank == 1)
+		return true;
+}
+
 u8 can_set_mega_trigger(u8 bank) //JeremyZ
 {
 	struct mega_related* mega = &new_battlestruct->mega_related;
@@ -178,6 +186,7 @@ u8 can_set_mega_trigger(u8 bank) //JeremyZ
 	//Z-Move
 	else if (mega_mode == 0 && can_set_z_trigger(bank))
 		mega_mode = 1;
+	else if (mega mode == 0 && can_set)
 	return mega_mode;
 }
 
