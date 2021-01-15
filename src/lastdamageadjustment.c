@@ -6,7 +6,7 @@ bool find_move_in_table(u16 move, const u16* table_ptr);
 void setup_berry_consume_buffers(u8 bank);
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
 u8 has_ability_effect(u8 bank, u8 mold_breaker, u8 gastro);
-bool check_ability(u8 bank, u16 ability);
+bool check_ability(u8 bank, u8 ability);
 void bs_push_current(void* now);
 bool not_impostered(u8 bank); //JeremyZ
 u32 random_value(u32 limit);
@@ -39,15 +39,6 @@ void atk07_final_dmg_calc(void)
         move_outcome.not_very_effective = 0;
         move_outcome.one_hit_ko = 0;
     }
-    else if(battle_participants[bank_target].species == POKE_EISCUE && check_ability(bank_target,ABILITY_ICE_FACE)
-       && has_ability_effect(bank_target, 1, 1) && MOVE_WORKED && move_table[current_move].split == MOVE_PHYSICAL && !affected_by_substitute(bank_target) && not_impostered(bank_target)) //shupian
-    {
-        new_battlestruct->various.bust_eiscue = 1;
-        damage_loc = 0;
-        move_outcome.super_effective = 0;
-        move_outcome.not_very_effective = 0;
-        move_outcome.one_hit_ko = 0;
-    }	
     else
     {
         if (new_battlestruct->various.berry_damage_redux)
@@ -75,7 +66,7 @@ void atk07_final_dmg_calc(void)
             {
                 damage_loc = target_hp - 1;
             }
-            else if (gBankAbilities[bank_target] == ABILITY_STURDY && has_ability_effect(bank_target, 1,1) && (damage_loc >= target_hp) && target_hp == battle_participants[bank_target].max_hp)
+            else if (battle_participants[bank_target].ability_id == ABILITY_STURDY && has_ability_effect(bank_target, 1, 1) && (damage_loc >= target_hp) && target_hp == battle_participants[bank_target].max_hp)
             {
                 damage_loc = target_hp - 1;
                 move_outcome.sturdied = 1;

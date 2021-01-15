@@ -100,9 +100,7 @@ extern u8 CANT_CONFUSE_DUETOABILITY_PRINT_END2[];
 
 extern u8 BS_MOODY[];
 extern u8 BS_CURSEDBODY[];
-extern u8 BS_PERISHBODY[];
 extern u8 BS_MUMMY[];
-extern u8 BS_WANDERING_SPIRIT[];
 extern u8 BS_ROUGHSKIN[];
 extern u8 BS_ANGERPOINT[];
 extern u8 BS_AFTERMATH[];
@@ -130,7 +128,6 @@ extern u8 BS_FAIRYAURA[];
 extern u8 BS_AURABREAK[];
 extern u8 BS_MOLDBREAKER[];
 extern u8 BS_UNNERVE[];
-extern u8 BS_SCREEN_ClEANER[];
 extern u8 BS_TELEPATHY[];
 extern u8 BS_SYMBIOSIS[];
 extern u8 BS_TRACE[];
@@ -148,9 +145,6 @@ extern u8 BS_EMBARGO_PREVENTS[];
 extern u8 BS_HEAVYRAIN_PREVENTS[];
 extern u8 BS_HARSHSUN_PREVENTS[];
 extern u8 BS_AROMAVEIL_PREVENTS[];
-
-extern u8 BS_PASTELVEIL_PREVENTS[];
-extern u8 BS_PASTELVEIL_HEAL[];
 
 extern u8 BS_STURDYENDURES[];
 extern u8 BS_ITEMSTATRAISE[];
@@ -236,7 +230,6 @@ extern u8 BS_BEAKBLAST[];
 extern u8 BS_CANTSELECT_GRAVITY[];
 extern u8 BS_CANTSELECT_HEALBLOCK[];
 extern u8 BS_CANTSELECT_ASSAULTVEST[];
-extern u8 BS_CANTSELECT_GORILLA_TACTICS[];
 
 extern u8 BS_GRASSYTERRAIN_HEAL[];
 
@@ -249,7 +242,6 @@ extern u8 BS_DRIZZLE[];
 extern u8 BS_SANDSTREAM[];
 extern u8 BS_AIRLOCK[];
 extern u8 BS_WIMPOUT[];
-extern u8 BS_NEUTRALIZING_GAS[];
 
 extern u8 BS_FORMCHANGE_WITH_TYPE_CHANGE[];
 extern u8 BS_STAT_ONLY_FORMCHANGE_END2[];
@@ -266,10 +258,5 @@ extern const u8 move_names_table[1025][13];
 extern const u8 z_move_names_table[47][15];
 extern const u8 type_names[TYPE_FAIRY][7];
 extern u8* battlescripts_table[183];
-
-//More abilities
-extern u16 gBankAbilities[4];
-extern u16 gRecordAbilities[4];
-extern u16 glPokeAbilities[][3];
 
 #endif /* static_references */

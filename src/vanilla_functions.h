@@ -63,7 +63,7 @@ void __attribute__((long_call)) c2_80777E8(void);
 void __attribute__((long_call)) obj_delete(struct object*);
 void __attribute__((long_call)) update_bank_sprite(u8 bank);
 void __attribute__((long_call)) bank_sprite_sth(u8 bank);
-u16 __attribute__((long_call)) get_poke_ability(struct pokemon* poke);
+u8 __attribute__((long_call)) get_poke_ability(struct pokemon* poke);
 u8 __attribute__((long_call)) get_overworld_weather();
 u32 __attribute__((long_call)) get_trainer_money(u16 trainerID);
 void __attribute__((long_call)) give_money(u32* owned_money, u32 to_add);
@@ -248,9 +248,9 @@ void __attribute__((long_call)) bb34_battle_animation(u8 buffID, u8 animID, u16 
 u32 read_word(const void*);
 u16 rng(void);
 
- void LZ77UnCompVram(const void* src, void* dst);
- void LZ77UnCompWram(const void* src, void* dst);
- void CpuSet(void* src, void* dst, u32 mode);
+void LZ77UnCompVram(const void* src, void* dst);
+void LZ77UnCompWram(const void* src, void* dst);
+void CpuSet(void* src, void* dst, u32 mode);
 
 u16 get_attributes(const struct pokemon* poke_address, u8 request, void* dst);
 void set_attributes(const struct pokemon* poke_address, u8 request, void* new_value);

@@ -392,7 +392,7 @@ u8 get_bank_side(u8 bank);
 		0xAB, 0xFF};
 /*0x23E*/const u8 targetnoconfusion_text[] = {0xFD, 0x10, 0x09, 0x53, 0x0F, 0x7E, 0x01, 0xA1, 0x03, 0x0A, 0x05, 0x79,
 		0x09, 0x0C, 0xAB, 0xFF};
-/*0x23F*/const u8 burnuptext[] = {0xFD, 0x0F, 0x0B, 0x3C, 0x0B, 0xB3, 0x02, 0xD9, 0x07, 0x51, 0x08, 0x9E, 0xAB, 0xFF};
+/*0x23F*/const u8 burnuptext[] = {0xFD, 0x0F, 0x01, 0x78, 0x0B, 0xB3, 0x0C, 0x63, 0x08, 0x9E, 0xAB, 0xFF};
 /*0x240*/const u8 attackeracquired[] = {0xFD, 0x0F, 0x05, 0x7E, 0x03, 0x0A, 0xFD, 0x19, 0xAB, 0xFF};
 /*0x241*/const u8 scractiveHPrestored[] = {0xFD, 0x13, 0x03, 0x0B, 0xC2, 0xCA, 0x05, 0x65, 0x04, 0x1E, 0x08, 0x9E, 0xAB,
 		0xFF};
@@ -495,17 +495,11 @@ u8 get_bank_side(u8 bank);
 /*0x26b*/const u8 exp_for_team_string[] = {0x03, 0x78, 0x0D, 0xAF, 0x10, 0xA1, 0x03, 0x0B, 0x07, 0x5B,
 		0x08, 0xBC, 0x05, 0x7E, 0x03, 0x0A, 0x08, 0x9E, 0x04, 0x61, 0x11, 0x0C, 0x03, 0x0B,
 		0x07, 0x5D, 0x0E, 0xD2, 0x10, 0x86, 0xFF};//31
-/*0x26c*/ const u8 goriliatactic_text[] = {0x0F, 0x0B, 0x0E, 0x54, 0x0F, 0x0B, 0x0F, 0x32, 0x11, 0x20, 0x10, 0x8A, 0x08, 0x9E, 0x0A, 0x9F, 0x0C, 0x9E, 0x05, 0xA7, 0x09, 0xD2, 0x03, 0x0B, 0x0B, 0xF5, 0x0F, 0x71, 0x3C, 0xFF};	
-/*0x26d*/ const u8 screencleaner_text[] = {0x0C, 0x4E, 0x09, 0x7E, 0x02, 0x23, 0x0B, 0xAD, 0x03, 0x0B, 0x0A, 0x7C, 0x10, 0x42, 0x01, 0x78, 0x0B, 0x07, 0x02, 0x7F, 0x08, 0x9E, 0x3C, 0xFF};	
-/*0x26e*/ const u8 wanderspirit_text[] = {0x0F, 0x7C, 0x05, 0x77, 0x0B, 0xF5, 0x0C, 0x4E, 0x03, 0xC0, 0x07, 0x0D, 0x05, 0x48, 0x08, 0x9E, 0x0C, 0xD9, 0x0E, 0x5F, 0x3C, 0xFF};	
-/*0x26f*/ const u8 pastelveil_text[] = {0x02, 0x23, 0x0B, 0xAD, 0x03, 0x0B, 0x03, 0xDE, 0x01, 0xE5, 0x05, 0x31, 0x09, 0xB1, 0x0E, 0x59, 0x02, 0x4B, 0x01, 0x60, 0x05, 0x31, 0x3C, 0xFF};	
-/*0x270*/ const u8 pastelveilheal_text[] = {0x03, 0xDE, 0x01, 0xE5, 0x05, 0x31, 0x09, 0xB1, 0x10, 0x9F, 0x0F, 0xA8, 0x08, 0x9E, 0x03, 0x63, 0x0C, 0x7B, 0x3C, 0xFF};	
-/*0x271*/ const u8 neutralizinggas_text[] = {0x0C, 0xD9, 0x0E, 0x5F, 0x03, 0x0B, 0x0E, 0x32, 0x04, 0xC3, 0x0E, 0x28, 0x0B, 0xE3, 0x08, 0x9E, 0xAB, 0xFF};			
 const u8 text_GO_xfd5[] = {0xFC, 2, 0xf, 0x07, 0x7D, 0x07, 0xA6, 0x03, 0x4D, 0x0C, 0x0C, 0x09, 0xD9, 0x08, 0x9E, 0xAB,
 		0x00, 0xFD, 0x05, 0xAB, 0xFF};
 const u8 text_go_fdx0[] = {0x07, 0x7D, 0x07, 0xA6, 0x03, 0x4D, 0x0C, 0x0C, 0x09, 0xD9, 0x08, 0x9E, 0xAB, 0x00, 0xfd,
 		0x00, 0xab, 0xFF};
-const u8* const new_strings_table[] = {firespintrap_text, magmastormtrap_text, extreme_sun_activation_text,
+const u8* new_strings_table[] = {firespintrap_text, magmastormtrap_text, extreme_sun_activation_text,
 		heavyrain_activation_text, mysticalaircurrent_activation_text, forewarn_text, slowstart_text, anticipation_text,
 		infestationtrap_text, airlock_text, harvest_text, healer_text, empty_text5, moldbreaker_text, turboblaze_text,
 		terravolt_text, empty_text9, use_zmove_text, empty_text12, absorbabilityimmune_text, userteam_text,
@@ -547,8 +541,7 @@ const u8* const new_strings_table[] = {firespintrap_text, magmastormtrap_text, e
 		TYPE_WATER_text, TYPE_GRASS_text, TYPE_ELECTRIC_text, TYPE_PSYCHIC_text, TYPE_ICE_text, TYPE_DRAGON_text,
 		TYPE_DARK_text, TYPE_FAIRY_text, throatchop_text, throatchopended_text, psychicterrainends_text,
 		terraincleared_text, aircurcontinues_text, aircurends_text, norecoildamage_text, movefailed_text,
-		reflect_text, reflectdouble_text, lightscreen_text, lightscreendouble_text,exp_for_team_string, goriliatactic_text, 
-		screencleaner_text, wanderspirit_text, pastelveil_text, pastelveilheal_text, neutralizinggas_text};
+		reflect_text, reflectdouble_text, lightscreen_text, lightscreendouble_text,exp_for_team_string};
 
 
 //u8 newtrainerclass_names[][7]={{0x02,0xD3,0x09,0x9D,0x0D,0x5D,0xff},};
@@ -646,7 +639,7 @@ const u8* get_partner_name(void)
 	if (battle_flags.player_ingame_partner)
 	{
 		if (partner_trainer & PARTNER_CUSTOM)
-			string_ptr = (*trainer_table)[BIC(partner_trainer, PARTNER_ANIMATES | PARTNER_CUSTOM)].name;
+			string_ptr = trainer_table[BIC(partner_trainer, PARTNER_ANIMATES | PARTNER_CUSTOM)].name;
 		else
 		{
 			get_frontier_trainer_name(script_text_buffer1, partner_trainer);
@@ -732,7 +725,7 @@ static void b_fdecode_case(const u8* const src, u8* dst)
 				dst = get_chosen_poke_nick(read_byte(&src[srcID]), read_byte(&src[srcID + 1]), dst);
 				srcID += 2;
 				break;
-			case 8: //todo
+			case 8:
 				String = negative_flavour_table[read_byte(&src[srcID])];
 				srcID++;
 				break;
@@ -950,16 +943,16 @@ u32 b_strcpy_decode(const u8* const src, u8* const dst)
 					string = get_ability_name_ptr(last_used_ability);
 					break;
 				case 24: //attackers ability
-					string = get_ability_name_ptr(gBankAbilities[bank_attacker]);
+					string = get_ability_name_ptr(abilities_by_banks[bank_attacker]);
 					break;
 				case 25: //targets ability
-					string = get_ability_name_ptr(gBankAbilities[bank_target]);
+					string = get_ability_name_ptr(abilities_by_banks[bank_target]);
 					break;
 				case 26: //scripting actives ability
-					string = get_ability_name_ptr(gBankAbilities[battle_scripting.active_bank]);
+					string = get_ability_name_ptr(abilities_by_banks[battle_scripting.active_bank]);
 					break;
 				case 27: //def partners ability
-					string = get_ability_name_ptr(gBankAbilities[bank_partner_def]);
+					string = get_ability_name_ptr(abilities_by_banks[bank_partner_def]);
 					break;
 				case 28: //trainer A class
 				{
@@ -1063,7 +1056,7 @@ u32 b_strcpy_decode(const u8* const src, u8* const dst)
 					else if (battle_flags.flag_x4000000)
 						class_id = get_x4000000_trainerclass(trainer_opponent_B);
 					else
-						class_id = (*trainer_table)[trainer_opponent_B].class;
+						class_id = trainer_table[trainer_opponent_B].class;
 					string = get_trainerclass_ptr(class_id);
 				}
 					break;
@@ -1079,7 +1072,7 @@ u32 b_strcpy_decode(const u8* const src, u8* const dst)
 						string = text;
 					}
 					else
-						string = (*trainer_table)[trainer_opponent_B].name;
+						string = trainer_table[trainer_opponent_B].name;
 					break;
 				case 48: //trainer B lose text
 					if (BATTLE_FRONTIER_BATTLE)
@@ -1105,7 +1098,7 @@ u32 b_strcpy_decode(const u8* const src, u8* const dst)
 				case 50: //partner trainer class
 					if (partner_trainer & PARTNER_CUSTOM)
 						string = get_trainerclass_ptr(
-								(*trainer_table)[BIC(partner_trainer, PARTNER_ANIMATES | PARTNER_CUSTOM)].class);
+								trainer_table[BIC(partner_trainer, PARTNER_ANIMATES | PARTNER_CUSTOM)].class);
 					else
 						string = get_trainerclass_ptr(get_frontier_opponent_class(partner_trainer));
 					break;
@@ -1234,15 +1227,13 @@ struct string_inf
 	u16 stringID;
 	u16 moves[2]; //curr move and last move
 	u16 last_item;
-	// u8 last_ability;
-	u16 last_ability;
+	u8 last_ability;
 	u8 scr_active;
 	u8 b_stuff_52;
 	u8 b_stuff_hpbadscale;
 	u8 another_act;
 	u8 move_type;
-	// u8 abilities[4];
-	u16 abilities[4];
+	u8 abilities[4];
 	u8 buffs[3][0x10];
 };
 
@@ -1264,7 +1255,7 @@ void b_buffer_string(u16 strID)
 
 	for (u8 i = 0; i < 4; i++)
 	{
-		gBankAbilities[i] = Strings->abilities[i];
+		abilities_by_banks[i] = Strings->abilities[i];
 	}
 
 	for (u8 i = 0; i < 0x10; i++)

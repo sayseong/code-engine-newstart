@@ -7,9 +7,9 @@ u8 hp_condition(u8 bank, u8 percent);
 u8 get_item_effect(u8 bank, u8 check_negating_effects);
 u8 has_ability_effect(u8 bank, u8 mold_breaker);
 
-bool check_ability(u8 bank, u16 ability)
+bool check_ability(u8 bank, u8 ability)
 {
-    if (has_ability_effect(bank, 0) && gBankAbilities[bank] == ability)
+    if (has_ability_effect(bank, 0) && battle_participants[bank].ability_id == ability)
         return 1;
     return 0;
 }
@@ -18,14 +18,8 @@ s8 get_priority(u16 move, u8 bank)
 {
     s8 priority = move_table[move].priority;
     if (check_ability(bank, ABILITY_GALE_WINGS) && move_table[move].type == TYPE_FLYING && FULL_HP(bank))
-        priority++;    
-    else if (check_ability(bank, ABILITY_QUICK_DRAW))
-	{
-        if(__umodsi3(battle_turn_random_no, 0x64) < 0x1e) {
-			        priority++;
-		       }
-     }
-	else if (check_ability(bank, ABILITY_PRANKSTER) && move_table[move].split == 2)
+        priority++;
+    else if (check_ability(bank, ABILITY_PRANKSTER) && move_table[move].split == 2)
         priority++;
     else if (check_ability(bank, ABILITY_TRIAGE))
     {
@@ -70,14 +64,10 @@ u8 get_first_to_strike(u8 bank1, u8 bank2, u8 ignore_priority)
         s8 priority2 = 0;
         u16 move1 = battle_participants[bank1].moves[battle_stuff_ptr->chosen_move_position[bank1]];
         u16 move2 = battle_participants[bank2].moves[battle_stuff_ptr->chosen_move_position[bank2]];
-        if(menu_choice_pbs[bank1]==0) //Hibiki
+        if(menu_choice_pbs[bank1]==0)
             priority1 = get_priority(move1, bank1);
-		else 
-			priority1 = 8;
-        if(menu_choice_pbs[bank2]==0) //Hibiki
+        if(menu_choice_pbs[bank2]==0)
             priority2 = get_priority(move2, bank2);
-		else 
-			priority2 = 8;
         if (priority1 > priority2)
             faster=0;
         else if (priority2 > priority1)
