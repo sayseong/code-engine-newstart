@@ -19,7 +19,7 @@ else:
     PATH += "\\bin"
 if PATH is None:
     print('DevKit does not exist in your Path variable.\nChecking default location.')
-    PATH = 'E:\\GAME\\GBA\\devkitARM\\bin'
+    PATH = 'C:\\devkitPro\\devkitARM\\bin'
     # PATH = 'D:\\ZXZ\\ZXZ\\entr\\Pokemon\\RSEFL\\Hack\\devkitARM\\bin'
     if not os.path.isdir(PATH):
         print("...\nDevkit not found.")
